@@ -1,6 +1,7 @@
 const multer = require("multer");
 
-const upload = multer();
+const storage = multer.memoryStorage(); // Store file in memory before streaming to GridFS
+const upload = multer({ storage: storage });
 
 const express = require("express");
 const { uploadVideo, getAllNews } = require("./video.controller");

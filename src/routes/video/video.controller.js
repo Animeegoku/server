@@ -12,7 +12,7 @@ exports.uploadVideo = async (req, res) => {
   }
 
   try {
-    const client = await MongoClient.connect(URL, {});
+    const client = await MongoClient.connect(URL, { useUnifiedTopology: true });
     const db = client.db();
 
     console.log("database connected");
@@ -22,19 +22,32 @@ exports.uploadVideo = async (req, res) => {
     });
 
     const uploadStream = bucket.openUploadStream(req.file.originalname);
+
     uploadStream.end(req.file.buffer);
-    videoReadStream.pipe(uploadStream);
+    //videoReadStream.pipe(uploadStream);
+
+    let totalBytes = 0;
+    let uploadedBytes = 0;
+
+    // Track total bytes to calculate progress
+    uploadStream.on("file", (file) => {
+      totalBytes = file.length;
+    });
+
+    // Track progress and send updates to the client
+    uploadStream.on("data", (chunk) => {
+      uploadedBytes += chunk.length;
+      const progress = (uploadedBytes / totalBytes) * 100;
+      // Send progress updates to the client
+      console.log(`Progress: ${progress.toFixed(2)}%\n`);
+      res.write(`Progress: ${progress.toFixed(2)}%\n`);
+    });
 
     uploadStream.on("finish", async () => {
-      const newVideo = new Video({
-        name: req.file.originalname,
-      });
-
-      await newVideo.save();
-
       client.close();
+      return res.end("File uploaded successfully");
 
-      return res.status(201).json({ message: "File uploaded successfully" });
+      //    res.status(201).json({ message: "File uploaded successfully" });
     });
 
     uploadStream.on("error", (err) => {
