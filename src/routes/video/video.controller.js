@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const { MongoClient, GridFSBucket } = require("mongodb");
-const Video = require("../../models/video.model");
 const fs = require("fs");
 
 exports.uploadVideo = async (req, res) => {
